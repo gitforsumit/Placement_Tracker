@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Placement Tracker</title>
+<meta name="theme-color" content="#2a4fd6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef1f6;--card:#fff;--ink:#14213d;--mute:#5c667a;--line:#d9dee8;--accent:#2a4fd6;--on-accent:#fff;--danger:#c0392b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mute:#98a2b8;--line:#27304a;--accent:#7b97ff;--on-accent:#0f1420;--danger:#ff7a6b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mute:#98a2b8;--line:#27304a;--accent:#7b97ff;--on-accent:#0f1420;--danger:#ff7a6b}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+h1{margin:0;font-size:26px;letter-spacing:-.02em}
+.stats{color:var(--mute);font-size:14px;margin-top:2px}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+textarea{resize:vertical;min-height:70px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tools{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:12px}
+.tools select{width:auto}
+.btn,.sm{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sm{padding:6px 12px;font-size:14px;border-radius:8px}
+.sm.log{color:var(--accent);border-color:var(--accent)}
+.sm.del{color:var(--danger)}
+.link{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;padding:9px 6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,2.4fr) auto;gap:14px;align-items:center}
+.head{padding:0 14px 6px;font-size:13px;color:var(--mute);font-weight:600}
+.row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.name{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.due{font-size:12.5px;color:var(--mute)}.due.soon{color:var(--danger);font-weight:600}
+.pkg{font-weight:600}
+.cm{display:block;color:var(--mute);font-size:14px;margin-top:3px;overflow-wrap:anywhere}
+.act{display:flex;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 16%,transparent)}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.empty{text-align:center;color:var(--mute);padding:36px 10px}
+.scrim{position:fixed;inset:0;background:rgba(10,14,25,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.scrim.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet h2{margin:0 0 12px;font-size:20px;overflow-wrap:anywhere}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:8px;margin-top:16px}.btns .btn{flex:1}
+.msg{font-size:13px;color:var(--mute);min-height:18px;margin-top:8px}
+.addrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px}
+.addrow select{width:auto}
+.entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.when{font-size:12.5px;color:var(--mute);margin-left:8px}
+.en{margin-top:4px;overflow-wrap:anywhere}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:18px}}
+@media (max-width:640px){
+ .head{display:none}
+ .grid{grid-template-columns:1fr auto;grid-template-areas:"n p" "s s" "a a";gap:8px 12px}
+ .c-n{grid-area:n}.c-p{grid-area:p;text-align:right}.c-s{grid-area:s}.c-a{grid-area:a}
+ .tools{grid-template-columns:1fr 1fr}.tools input{grid-column:1/-1}
+}
+.banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:color-mix(in srgb,var(--accent) 14%,var(--card));border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+.banner[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1>Placements</h1><div class="stats" id="stats"></div></div>
+    <div><button class="link" id="openBackup">Backup</button><button class="btn pri" id="add">Add company</button></div>
+  </header>
+  <div class="banner" id="bkBanner" hidden><span id="bkBannerTxt"></span><button class="sm" id="bkNow">Download backup</button></div>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search company or comment" aria-label="Search">
+    <select id="stageSel" aria-label="Filter by status"></select>
+    <select id="sort" aria-label="Sort">
+      <option value="upd">Latest update</option><option value="due">Apply-by date</option><option value="name">Company name</option>
+    </select>
+  </div>
+  <div class="grid head"><span>Company</span><span>Package</span><span>Status</span><span>Actions</span></div>
+  <div id="list"></div>
+</div>
+
+<div class="scrim" id="logScrim"><div class="sheet" role="dialog" aria-label="Status log">
+  <h2 id="lTitle"></h2>
+  <label for="lStage">Add a new status</label>
+  <div class="addrow">
+    <select id="lStage" aria-label="Status"></select>
+    <input id="lNote" placeholder="Comment (optional)" autocomplete="off" aria-label="Comment">
+    <button class="btn pri" id="lAdd">Add</button>
+  </div>
+  <div id="lList"></div>
+  <div class="btns"><button class="btn" id="lClose">Close</button></div>
+</div></div>
+
+<div class="scrim" id="formScrim"><div class="sheet" role="dialog" aria-label="Company details">
+  <h2 id="fTitle"></h2>
+  <label for="fName">Company</label><input id="fName" autocomplete="off">
+  <div class="two">
+    <div><label for="fPkg">Package</label><input id="fPkg" placeholder="e.g. 12 LPA"></div>
+    <div><label for="fDue">Apply by</label><input id="fDue" type="date"></div>
+  </div>
+  <div id="addOnly">
+    <label for="fStage">Current status</label><select id="fStage"></select>
+    <label for="fNote">Comment</label><textarea id="fNote" placeholder="e.g. Form link in email, closes Friday"></textarea>
+  </div>
+  <div class="msg" id="fMsg"></div>
+  <div class="btns">
+    <button class="btn del" id="fDel" hidden style="color:var(--danger)">Delete company</button>
+    <button class="btn" id="fCancel">Cancel</button>
+    <button class="btn pri" id="fSave">Save</button>
+  </div>
+</div></div>
+
+<div class="scrim" id="bkScrim"><div class="sheet" role="dialog" aria-label="Backup">
+  <h2>Backup and restore</h2>
+  <div class="stats" id="bkInfo" style="margin-bottom:10px"></div>
+  <div class="btns" style="margin-top:0"><button class="btn pri" id="bkFile">Download backup file</button><button class="btn" id="bkPick">Restore from file</button></div>
+  <input type="file" id="bkInput" accept=".json,application/json" hidden>
+  <label for="bkText">Or copy and paste as text</label>
+  <textarea id="bkText" style="min-height:110px" spellcheck="false"></textarea>
+  <div class="msg" id="bkMsg"></div>
+  <div class="btns"><button class="btn" id="bkClose">Close</button><button class="btn" id="bkCopy">Copy text</button><button class="btn" id="bkRestore">Restore text</button></div>
+</div></div>
+
+<script>
+const KEY="tracker-v2";
+const STAGES=["Not applied","Applied","Shortlisted","Aptitude test","Technical round","HR round","Offer","Rejected"];
+const COL=["#7a8294","#2f6fdb","#0e8f9e","#b7791f","#8e44ad","#c2410c","#1f9d57","#c0392b"];
+let items=[],logId=null,editId=null,armed=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fmtD=ts=>new Date(ts).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+const fmtT=ts=>new Date(ts).toLocaleString("en-IN",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+const cur=c=>c.log.length?c.log[c.log.length-1]:null;
+const badge=k=>'<span class="badge" style="--c:'+COL[k]+'">'+STAGES[k]+'</span>';
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));items=Array.isArray(v)?v:[]}catch(e){items=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+
+function dueHtml(c){
+  if(!c.due)return "";
+  const s=cur(c),st=s?s.stage:0;
+  const diff=Math.round((new Date(c.due+"T00:00:00")-new Date(new Date().toDateString()))/864e5);
+  const soon=st===0&&diff>=0&&diff<=2;
+  return '<div class="due'+(soon?" soon":"")+'">'+(diff<0?"Closed ":"Apply by ")+fmtD(c.due+"T00:00:00")+(soon?" ("+(diff===0?"today":diff+"d left")+")":"")+"</div>";
+}
+
+function render(){
+  const q=$("q").value.trim().toLowerCase(),f=$("stageSel").value,sort=$("sort").value;
+  const active=items.filter(c=>{const s=cur(c);return s&&s.stage>=1&&s.stage<=5}).length;
+  const offers=items.filter(c=>{const s=cur(c);return s&&s.stage===6}).length;
+  $("stats").textContent=items.length+(items.length===1?" company, ":" companies, ")+active+" in progress, "+offers+(offers===1?" offer":" offers");
+  const t=c=>(cur(c)?cur(c).at:c.created)||0;
+  const list=items.filter(c=>{
+    const s=cur(c);
+    const okF=f==="all"||(f==="none"?!s:(s&&s.stage===+f));
+    return okF&&(!q||(c.name+" "+(s?s.note:"")).toLowerCase().includes(q));
+  }).sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="due"?(a.due||"9999").localeCompare(b.due||"9999"):t(b)-t(a));
+  $("list").innerHTML=list.length?list.map(c=>{
+    const s=cur(c);
+    return '<div class="row grid"><div class="c-n"><div class="name">'+esc(c.name)+"</div>"+dueHtml(c)+"</div>"
+      +'<div class="c-p pkg">'+(esc(c.pkg)||"-")+"</div>"
+      +'<div class="c-s">'+(s?badge(s.stage)+(s.note?'<span class="cm">'+esc(s.note)+"</span>":""):'<span class="cm">No status yet</span>')+"</div>"
+      +'<div class="c-a act"><button class="sm log" data-log="'+c.id+'">Log ('+c.log.length+')</button><button class="sm" data-edit="'+c.id+'">Edit</button></div></div>';
+  }).join(""):'<div class="empty">'+(items.length?"No companies match.":'Nothing here yet. Tap Add company to log the first one from your inbox.<div><button class="link" data-restore>Restore from a backup</button></div>')+"</div>";
+  updBackupUI();
+}
+
+function renderLog(){
+  const c=items.find(x=>x.id===logId);if(!c)return;
+  $("lTitle").textContent=c.name;
+  $("lList").innerHTML=c.log.length?c.log.slice().reverse().map(e=>
+    '<div class="entry"><div>'+badge(e.stage)+'<span class="when">'+fmtT(e.at)+"</span>"+(e.note?'<div class="en">'+esc(e.note)+"</div>":"")+"</div>"
+    +'<button class="sm del" data-e="'+e.id+'">'+(armed==="e"+e.id?"Tap again to delete":"Delete")+"</button></div>").join("")
+    :'<div class="empty">No status yet. Add the first one above.</div>';
+}
+function openLog(id){
+  logId=id;armed=null;const c=items.find(x=>x.id===id),s=cur(c);
+  $("lStage").value=s?s.stage:1;$("lNote").value="";renderLog();$("logScrim").classList.add("open");
+}
+function openForm(id){
+  editId=id||null;armed=null;const c=id?items.find(x=>x.id===id):null;
+  $("fTitle").textContent=c?"Edit company":"Add company";
+  $("fName").value=c?c.name:"";$("fPkg").value=c?c.pkg:"";$("fDue").value=c?c.due:"";
+  $("fStage").value=0;$("fNote").value="";$("addOnly").hidden=!!c;
+  $("fDel").hidden=!c;$("fDel").textContent="Delete company";$("fMsg").textContent="";
+  $("formScrim").classList.add("open");if(!c)$("fName").focus();
+}
+const closeAll=()=>{armed=null;document.querySelectorAll(".scrim").forEach(s=>s.classList.remove("open"))};
+
+const opts=STAGES.map((s,k)=>'<option value="'+k+'">'+s+"</option>").join("");
+$("lStage").innerHTML=opts;$("fStage").innerHTML=opts;
+$("stageSel").innerHTML='<option value="all">All statuses</option><option value="none">No status yet</option>'+opts;
+
+$("add").onclick=()=>openForm();
+$("list").onclick=e=>{
+  const l=e.target.closest("[data-log]"),d=e.target.closest("[data-edit]");
+  if(e.target.closest("[data-restore]"))$("openBackup").click();
+  else if(l)openLog(l.dataset.log);else if(d)openForm(d.dataset.edit);
+};
+$("q").oninput=render;$("stageSel").onchange=render;$("sort").onchange=render;
+document.querySelectorAll(".scrim").forEach(s=>s.addEventListener("click",e=>{if(e.target===s)closeAll()}));
+["lClose","fCancel","bkClose"].forEach(id=>$(id).onclick=closeAll);
+
+$("lAdd").onclick=()=>{
+  const c=items.find(x=>x.id===logId);if(!c)return;
+  c.log.push({id:uid(),at:Date.now(),stage:+$("lStage").value,note:$("lNote").value.trim()});
+  $("lNote").value="";armed=null;save();renderLog();render();
+};
+$("lNote").onkeydown=e=>{if(e.key==="Enter")$("lAdd").click()};
+$("lList").onclick=e=>{
+  const b=e.target.closest("[data-e]");if(!b)return;
+  const k="e"+b.dataset.e;
+  if(armed!==k){armed=k;renderLog();return}
+  const c=items.find(x=>x.id===logId);
+  c.log=c.log.filter(x=>x.id!==b.dataset.e);armed=null;save();renderLog();render();
+};
+
+$("fSave").onclick=()=>{
+  const name=$("fName").value.trim();
+  if(!name){$("fMsg").textContent="Enter the company name to save.";return}
+  const pkg=$("fPkg").value.trim(),due=$("fDue").value;
+  if(editId){Object.assign(items.find(x=>x.id===editId),{name,pkg,due})}
+  else items.push({id:uid(),name,pkg,due,created:Date.now(),log:[{id:uid(),at:Date.now(),stage:+$("fStage").value,note:$("fNote").value.trim()}]});
+  save();closeAll();render();
+};
+$("fDel").onclick=()=>{
+  if(armed!=="c"){armed="c";$("fDel").textContent="Tap again to delete";return}
+  items=items.filter(x=>x.id!==editId);save();closeAll();render();
+};
+
+const META="tracker-v2-meta";
+function lastBackup(){try{return +JSON.parse(localStorage.getItem(META)).last||0}catch(e){return 0}}
+function markBackup(){try{localStorage.setItem(META,JSON.stringify({last:Date.now()}))}catch(e){}}
+function updBackupUI(){
+  const l=lastBackup(),days=l?Math.floor((Date.now()-l)/864e5):0;
+  $("bkInfo").textContent=l?"Last backup file: "+fmtT(l)+".":"No backup file downloaded yet.";
+  const need=items.length>0&&(!l||days>=7);
+  $("bkBanner").hidden=!need;
+  if(need)$("bkBannerTxt").textContent=l?"Your last backup was "+days+" days ago.":"You have not downloaded a backup yet.";
+}
+function downloadBackup(){
+  const blob=new Blob([JSON.stringify(items,null,1)],{type:"application/json"});
+  const a=document.createElement("a"),d=new Date();
+  a.href=URL.createObjectURL(blob);
+  a.download="placements-backup-"+d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+".json";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  markBackup();updBackupUI();$("bkMsg").textContent="Backup saved to your Downloads folder.";
+}
+function restore(text){
+  try{
+    const v=JSON.parse(text);
+    if(!Array.isArray(v)||v.some(c=>typeof c.name!=="string"))throw 0;
+    if(items.length&&armed!=="r"){armed="r";$("bkMsg").textContent="This replaces your current "+items.length+" companies. Tap Restore text again to continue.";return}
+    items=v.map(c=>({id:c.id||uid(),name:c.name,pkg:c.pkg||"",due:c.due||"",created:c.created||Date.now(),
+      log:(Array.isArray(c.log)?c.log:[]).map(e=>({id:e.id||uid(),at:e.at||Date.now(),stage:Math.min(7,Math.max(0,+e.stage||0)),note:e.note||""}))}));
+    armed=null;save();markBackup();render();$("bkMsg").textContent="Restored "+items.length+" companies.";
+  }catch(e){$("bkMsg").textContent="Not a valid backup. Use the full file or text from an earlier backup."}
+}
+$("openBackup").onclick=()=>{$("bkText").value=JSON.stringify(items);$("bkMsg").textContent="";armed=null;updBackupUI();$("bkScrim").classList.add("open")};
+$("bkFile").onclick=downloadBackup;
+$("bkNow").onclick=downloadBackup;
+$("bkPick").onclick=()=>$("bkInput").click();
+$("bkInput").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{$("bkText").value=r.result;if(items.length){armed="r";$("bkMsg").textContent="File loaded. This replaces your current "+items.length+" companies. Tap Restore text to continue."}else restore(r.result)};
+  r.readAsText(f);e.target.value="";
+};
+$("bkCopy").onclick=async()=>{
+  const t=$("bkText");t.value=JSON.stringify(items);t.select();
+  try{await navigator.clipboard.writeText(t.value);$("bkMsg").textContent="Copied."}
+  catch(e){$("bkMsg").textContent="Select all the text and copy it manually."}
+};
+$("bkRestore").onclick=()=>restore($("bkText").value);
+
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+
+
+load();render();
+</script>
+</body>
+</html>
